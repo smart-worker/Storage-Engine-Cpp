@@ -78,3 +78,28 @@ std::string RespParser::createError(const std::string &error)
 {
     return "-ERR " + error + "\r\n";
 }
+
+/**
+ * @brief Serializes a vector of strings into a RESP-2 array of bulk strings.
+ *
+ * This function constructs the array prefix '*' followed by the number of elements.
+ * It then iterates through the vector, serializing each string into a
+ * RESP-2 bulk string format using the serializeBulkString method.
+ *
+ * @param values The vector of strings to be serialized.
+ * @return A single RESP-2 formatted string representing the array.
+ */
+std::string RespParser::serializeArray(const std::vector<std::string> &values)
+{
+    std::stringstream ss;
+    // 1. Write the array prefix and element count
+    ss << "*" << values.size() << "\r\n";
+
+    // 2. Append each element as a serialized bulk string
+    for (const auto &value : values)
+    {
+        ss << serializeBulkString(value);
+    }
+
+    return ss.str();
+}

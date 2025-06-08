@@ -77,7 +77,7 @@ void LSMTree::set(const std::string &key, const std::string &value)
  */
 std::string LSMTree::get(const std::string &key)
 {
-    std::cout << "KEY IS: " << key << std::endl;
+    // std::cout << "KEY IS: " << key << std::endl;
     auto it = memtable.find(key);
     if (it != memtable.end())
     {
@@ -101,6 +101,36 @@ std::string LSMTree::get(const std::string &key)
         }
     }
     return "NOT_FOUND";
+}
+
+/**
+ * @brief Retrieves all key-value pairs from the memtable.
+ *
+ * Iterates through the in-memory memtable and collects all non-deleted keys
+ * and their corresponding values into a single flat vector. This format is
+ * ideal for serialization into a RESP array.
+ *
+ * For example: { "key1": "val1", "key2": "val2" } becomes [ "key1", "val1", "key2", "val2" ]
+ *
+ * @return A vector of strings containing interleaved keys and values.
+ */
+std::vector<std::string> LSMTree::getAllKeyValuePairs()
+{
+    std::vector<std::string> results;
+    // Reserve space to avoid multiple reallocations, assuming memtable is a std::map or similar.
+    results.reserve(memtable.size() * 2);
+
+    for (const auto &pair : memtable)
+    {
+        // Check for the tombstone marker
+        if (pair.second != "DELETED")
+        {
+            results.push_back(pair.first);  // Push the key
+            results.push_back(pair.second); // Push the value
+        }
+    }
+
+    return results;
 }
 
 /**

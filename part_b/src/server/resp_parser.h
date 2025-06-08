@@ -45,6 +45,11 @@ public:
      * @return RESP formatted error message
      */
     static std::string createError(const std::string &error);
+
+    /**
+     * @brief Serializes a vector of strings into a RESP-2 array.
+     */
+    static std::string serializeArray(const std::vector<std::string> &values);
 };
 
 #endif // RESP_PARSER_H

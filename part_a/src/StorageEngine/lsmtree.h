@@ -70,6 +70,12 @@ public:
      * @param key The key to remove.
      */
     void remove(const std::string &key);
+
+    /**
+     * @brief Retrives the values of all the keys stored in the database.
+     * @return A vector of values found the database.
+     */
+    std::vector<std::string> getAllKeyValuePairs();
 };
 
 #endif // LSM_TREE_H

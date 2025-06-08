@@ -54,7 +54,12 @@ std::string KQueueServer::processCommand(const std::vector<std::string> &args, i
 
     try
     {
-        if (cmd == "set" && args.size() == 3)
+        if (cmd == "getall" && args.size() == 1)
+        {
+            std::vector<std::string> arrVals = store.getAllKeyValuePairs();
+            return RespParser::serializeArray(arrVals);
+        }
+        else if (cmd == "set" && args.size() == 3)
         {
             // store.set(data.keys[rn], data.values[rn]); // For benchmark
             store.set(args[1], args[2]);
