@@ -51,6 +51,7 @@ std::string KQueueServer::processCommand(const std::vector<std::string> &args, i
 
     std::string cmd = args[0];
     std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
+    std::cout << "Command: " << cmd << std::endl;
 
     try
     {
@@ -70,6 +71,11 @@ std::string KQueueServer::processCommand(const std::vector<std::string> &args, i
             // std::string value = store.get(data.keys[rn]); // For benchmark
             std::string value = store.get(args[1]);
             return RespParser::serializeBulkString(value.length() ? value : "NULL");
+        }
+        else if (cmd == "del" && args.size() == 2)
+        {
+            store.remove(args[1]);
+            return RespParser::createSimpleString("OK");
         }
         else if (cmd == "ping")
         {
