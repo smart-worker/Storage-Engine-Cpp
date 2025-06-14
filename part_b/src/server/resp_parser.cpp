@@ -66,6 +66,13 @@ std::string RespParser::createSimpleString(const std::string &status)
     return "+" + status + "\r\n";
 }
 
+std::string RespParser::createResponseForSubscriber(const std::string &msg, const std::string &channel_name)
+{
+    return "*3\r\n$7\r\nmessage\r\n$" +
+           std::to_string(channel_name.length()) + "\r\n" + channel_name + "\r\n" +
+           "$" + std::to_string(msg.length()) + "\r\n" + msg + "\r\n";
+}
+
 /**
  * @brief Creates a RESP-2 error response.
  *

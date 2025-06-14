@@ -29,14 +29,17 @@ private:
     int kq;
     LSMTree &store;
     BenchmarkData &data;
+    std::vector<int> subscriptions;
+    const std::string channel_name = "db_changes";
 
     /**
      * @brief Processes a command from a client
      * @param args Command arguments
      * @param rn Random number for benchmark data access
+     * @param fd Client socket file descriptor
      * @return Response to send to client
      */
-    std::string processCommand(const std::vector<std::string> &args, int rn);
+    std::string processCommand(const std::vector<std::string> &args, int rn, int fd);
 
     /**
      * @brief Handles a client connection
@@ -44,6 +47,8 @@ private:
      * @param rn Random number for benchmark data access
      */
     void handleClient(int fd, int rn);
+
+    void sendUpdateNotification();
 
 public:
     /**

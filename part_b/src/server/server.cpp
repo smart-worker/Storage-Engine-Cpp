@@ -38,13 +38,30 @@ KQueueServer::~KQueueServer()
     }
 }
 
+void KQueueServer::sendUpdateNotification()
+{
+    const std::string message = "UPDATE";
+
+    if (subscriptions.size() > 0)
+    {
+        // This is the message format subscribers will receive
+        // Format: ["message", "channel_name", "the_message"]
+        std::string message_to_send = RespParser::createResponseForSubscriber(message, channel_name);
+
+        for (const int &fd : subscriptions)
+        {
+            send(fd, message_to_send.c_str(), message_to_send.length(), 0);
+        }
+    }
+}
+
 /**
  * @brief Processes a client command and generates a response.
  * @param args Parsed command arguments.
  * @param rn Random index for benchmark data access.
  * @return A RESP-formatted response string.
  */
-std::string KQueueServer::processCommand(const std::vector<std::string> &args, int rn)
+std::string KQueueServer::processCommand(const std::vector<std::string> &args, int rn, int fd)
 {
     if (args.empty())
         return RespParser::createError("no command");
@@ -55,6 +72,43 @@ std::string KQueueServer::processCommand(const std::vector<std::string> &args, i
 
     try
     {
+        if (cmd == "subscribe")
+        {
+            // SUBSCRIBE channel1 [channel2 ...]
+            for (size_t i = 1; i < args.size(); ++i)
+            {
+                subscriptions.push_back(fd);
+
+                // IMPORTANT: Send confirmation back to the client in RESP format
+                // This is what Redis clients like ioredis expect.
+                // Format: ["subscribe", "channel_name", 1]
+                std::string response = "*3\r\n$9\r\nsubscribe\r\n$" +
+                                       std::to_string(channel_name.length()) + "\r\n" + channel_name + "\r\n" +
+                                       ":1\r\n";
+                return response;
+            }
+        }
+        else if (cmd == "publish" && args.size() >= 2)
+        {
+            const std::string &message = args[1];
+
+            int subscribers_count = 0;
+            if (subscriptions.size() > 0)
+            {
+                // This is the message format subscribers will receive
+                // Format: ["message", "channel_name", "the_message"]
+                std::string message_to_send = RespParser::createResponseForSubscriber(message, channel_name);
+
+                for (const int &fd : subscriptions)
+                {
+                    send(fd, message_to_send.c_str(), message_to_send.length(), 0);
+                    subscribers_count++;
+                }
+            }
+            // Respond to the publisher with the count of subscribers reached
+            std::string response = ":" + std::to_string(subscribers_count) + "\r\n";
+            return response;
+        }
         if (cmd == "getall" && args.size() == 1)
         {
             std::vector<std::string> arrVals = store.getAllKeyValuePairs();
@@ -64,6 +118,7 @@ std::string KQueueServer::processCommand(const std::vector<std::string> &args, i
         {
             // store.set(data.keys[rn], data.values[rn]); // For benchmark
             store.set(args[1], args[2]);
+            sendUpdateNotification();
             return RespParser::createSimpleString("OK");
         }
         else if (cmd == "get" && args.size() == 2)
@@ -75,6 +130,7 @@ std::string KQueueServer::processCommand(const std::vector<std::string> &args, i
         else if (cmd == "del" && args.size() == 2)
         {
             store.remove(args[1]);
+            sendUpdateNotification();
             return RespParser::createSimpleString("OK");
         }
         else if (cmd == "ping")
@@ -129,7 +185,7 @@ void KQueueServer::handleClient(int fd, int rn)
         // std::cout << "RAW CLIENT INPUT:\n"
         //           << buffer << std::endl;
         auto args = RespParser::parseArray(std::string(buffer, bytes_read));
-        std::string response = processCommand(args, rn);
+        std::string response = processCommand(args, rn, fd);
         send(fd, response.c_str(), response.size(), 0);
     }
 }

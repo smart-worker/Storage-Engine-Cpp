@@ -39,12 +39,15 @@ public:
      */
     static std::string createSimpleString(const std::string &status);
 
+    static std::string createResponseForSubscriber(const std::string &msg, const std::string &channel_name);
+
     /**
      * @brief Creates a RESP error response
      * @param error The error message
      * @return RESP formatted error message
      */
-    static std::string createError(const std::string &error);
+    static std::string
+    createError(const std::string &error);
 
     /**
      * @brief Serializes a vector of strings into a RESP-2 array.
